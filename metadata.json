@@ -1,0 +1,6 @@
+{
+  "name": "Todo List",
+  "description": "A clean, modern, offline-first Todo List application designed with a slate dark aesthetic, featuring persistent local Room Room Database storage, categories, priority sorting, dynamic task completion states, an interactive 7-day progress tracker with capsule bar charts, and a granular Daily Focus settings control panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
