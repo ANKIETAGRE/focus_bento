@@ -9,7 +9,7 @@ interface TodoDao {
     fun getAllTodos(userEmail: String): Flow<List<Todo>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTodo(todo: Todo)
+    suspend fun insertTodo(todo: Todo): Long
 
     @Update
     suspend fun updateTodo(todo: Todo)

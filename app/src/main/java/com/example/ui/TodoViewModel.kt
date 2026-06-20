@@ -145,46 +145,73 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
                     timeInMillis = baseTime
                 }
                 for (i in 0 until 7) {
-                    repository.insert(
-                        Todo(
-                            title = title.trim(),
-                            description = description.trim(),
-                            priority = priority,
-                            dueDate = calendar.timeInMillis,
-                            userEmail = currentEmail
-                        )
-                    )
-                    calendar.add(Calendar.DAY_OF_MONTH, 1)
-                }
-            } else {
-                repository.insert(
-                    Todo(
+                    val newTodo = Todo(
                         title = title.trim(),
                         description = description.trim(),
                         priority = priority,
-                        dueDate = dueDate,
+                        dueDate = calendar.timeInMillis,
                         userEmail = currentEmail
                     )
+                    val insertedId = repository.insert(newTodo)
+                    if (calendar.timeInMillis > System.currentTimeMillis()) {
+                        com.example.data.LocalAlarmScheduler.schedule(
+                            getApplication(),
+                            newTodo.copy(id = insertedId)
+                        )
+                    }
+                    calendar.add(Calendar.DAY_OF_MONTH, 1)
+                }
+            } else {
+                val newTodo = Todo(
+                    title = title.trim(),
+                    description = description.trim(),
+                    priority = priority,
+                    dueDate = dueDate,
+                    userEmail = currentEmail
                 )
+                val insertedId = repository.insert(newTodo)
+                if (dueDate != null && dueDate > System.currentTimeMillis()) {
+                    com.example.data.LocalAlarmScheduler.schedule(
+                        getApplication(),
+                        newTodo.copy(id = insertedId)
+                    )
+                }
             }
         }
     }
 
     fun toggleTodo(todo: Todo) {
         viewModelScope.launch {
-            repository.update(todo.copy(isCompleted = !todo.isCompleted))
+            val newCompleted = !todo.isCompleted
+            val updatedTodo = todo.copy(isCompleted = newCompleted)
+            repository.update(updatedTodo)
+            if (newCompleted) {
+                com.example.data.LocalAlarmScheduler.cancel(getApplication(), todo.id)
+            } else {
+                if (todo.dueDate != null && todo.dueDate > System.currentTimeMillis()) {
+                    com.example.data.LocalAlarmScheduler.schedule(getApplication(), todo)
+                }
+            }
         }
     }
 
     fun updateTodo(todo: Todo) {
         viewModelScope.launch {
             repository.update(todo)
+            if (todo.isCompleted) {
+                com.example.data.LocalAlarmScheduler.cancel(getApplication(), todo.id)
+            } else if (todo.dueDate != null && todo.dueDate > System.currentTimeMillis()) {
+                com.example.data.LocalAlarmScheduler.schedule(getApplication(), todo)
+            } else {
+                com.example.data.LocalAlarmScheduler.cancel(getApplication(), todo.id)
+            }
         }
     }
 
     fun deleteTodo(todo: Todo) {
         viewModelScope.launch {
             repository.delete(todo)
+            com.example.data.LocalAlarmScheduler.cancel(getApplication(), todo.id)
         }
     }
 

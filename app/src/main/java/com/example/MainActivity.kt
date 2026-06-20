@@ -1017,7 +1017,7 @@ fun TodoItemCard(
               )
               Spacer(modifier = Modifier.width(4.dp))
               Text(
-                text = "Due: " + formatLongDate(todo.dueDate),
+                text = "Due: " + formatLongDateTime(todo.dueDate),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
@@ -1078,6 +1078,10 @@ fun AddTaskBottomSheet(
   var repeatWeekly by remember { mutableStateOf(false) }
 
   val context = LocalContext.current
+  val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+    contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    onResult = { _ -> }
+  )
 
   ModalBottomSheet(
     onDismissRequest = onDismiss,
@@ -1197,12 +1201,41 @@ fun AddTaskBottomSheet(
             .fillMaxWidth()
             .clickable {
               val calendar = Calendar.getInstance()
+              if (dueDate != null) {
+                calendar.timeInMillis = dueDate!!
+              }
               android.app.DatePickerDialog(
                 context,
                 { _, year, month, day ->
                   val selectedCal = Calendar.getInstance()
-                  selectedCal.set(year, month, day)
-                  dueDate = selectedCal.timeInMillis
+                  selectedCal.set(Calendar.YEAR, year)
+                  selectedCal.set(Calendar.MONTH, month)
+                  selectedCal.set(Calendar.DAY_OF_MONTH, day)
+                  
+                  val currentHour = selectedCal.get(Calendar.HOUR)
+                  val currentMinute = selectedCal.get(Calendar.MINUTE)
+                  
+                  android.app.TimePickerDialog(
+                    context,
+                    { _, hourOfDay, minute ->
+                      selectedCal.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                      selectedCal.set(Calendar.MINUTE, minute)
+                      selectedCal.set(Calendar.SECOND, 0)
+                      selectedCal.set(Calendar.MILLISECOND, 0)
+                      dueDate = selectedCal.timeInMillis
+                      
+                      // Request notification permission on Android 13+ contextually
+                      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                          val permission = android.Manifest.permission.POST_NOTIFICATIONS
+                          if (androidx.core.content.ContextCompat.checkSelfPermission(context, permission) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                              permissionLauncher.launch(permission)
+                          }
+                      }
+                    },
+                    currentHour,
+                    currentMinute,
+                    false
+                  ).show()
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -1225,13 +1258,13 @@ fun AddTaskBottomSheet(
           Spacer(modifier = Modifier.width(10.dp))
           Column {
             Text(
-              text = "Set Due Date",
+              text = "Set Due Date & Time",
               fontSize = 13.sp,
               fontWeight = FontWeight.Bold,
               color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-              text = if (dueDate != null) formatLongDate(dueDate!!) else "No due date set",
+              text = if (dueDate != null) formatLongDateTime(dueDate!!) else "No due date set",
               fontSize = 11.sp,
               color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1340,6 +1373,11 @@ private fun Int.getM3IconSize(): androidx.compose.ui.unit.Dp = this.dp
 
 fun formatLongDate(timestamp: Long): String {
   val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+  return sdf.format(Date(timestamp))
+}
+
+fun formatLongDateTime(timestamp: Long): String {
+  val sdf = SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault())
   return sdf.format(Date(timestamp))
 }
 

@@ -8,12 +8,12 @@ plugins {
 
 android {
   namespace = "com.example"
-  compileSdk { version = release(36) { minorApiLevel = 1 } }
+  compileSdk = 35
 
   defaultConfig {
     applicationId = "com.aistudio.todolist.zkfph"
     minSdk = 24
-    targetSdk = 36
+    targetSdk = 35
     versionCode = 1
     versionName = "1.0"
 
@@ -119,3 +119,17 @@ dependencies {
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
 }
+
+tasks.register("copyApkToRoot") {
+  dependsOn("assembleDebug")
+  doLast {
+    val apkFile = file("build/outputs/apk/debug/app-debug.apk")
+    if (apkFile.exists()) {
+      apkFile.copyTo(file("../Focus_Bento_Todo_List.apk"), overwrite = true)
+      println("Successfully copied APK to root folder!")
+    } else {
+      println("APK file does not exist yet at ${apkFile.absolutePath}")
+    }
+  }
+}
+

@@ -3,7 +3,7 @@
     <item
         android:width="66dp"
         android:height="66dp"
-        android:drawable="@drawable/focus_bento_logo_1781781130517"
+        android:drawable="@drawable/img_checklist_launcher_logo_1781882890651"
         android:gravity="center" />
 </layer-list>
 

@@ -5,8 +5,8 @@ import kotlinx.coroutines.flow.Flow
 class TodoRepository(private val todoDao: TodoDao, private val userDao: UserDao) {
     fun getAllTodos(userEmail: String): Flow<List<Todo>> = todoDao.getAllTodos(userEmail)
 
-    suspend fun insert(todo: Todo) {
-        todoDao.insertTodo(todo)
+    suspend fun insert(todo: Todo): Long {
+        return todoDao.insertTodo(todo)
     }
 
     suspend fun update(todo: Todo) {
